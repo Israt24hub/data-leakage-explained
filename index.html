@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>The Column That Fooled Every Model</title>
+    <meta name="description" content="An interactive explainer on data leakage, from a study of the UCI Bank Marketing data. Switch a leaky column on and off and watch the score jump.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+    <header class="intro wrap">
+        <p class="eyebrow">Data leakage, explained · from a CSE445 study at North South University</p>
+        <h1>The column that fooled every model</h1>
+        <p class="lede">We trained classical models, tabular foundation models, fine-tuned transformers and an LLM to predict which bank customers would say yes to an offer. One column made <em>all</em> of them look better than they were. Here is how it happens, and how to catch it.</p>
+    </header>
+
+    <section class="wrap prose">
+        <h2>The task</h2>
+        <p>A Portuguese bank phoned customers to sell a term deposit. The data, published on the UCI repository, records each call: who the customer is, when they were called, how long the call lasted, and whether they said yes. Only about <strong>11%</strong> did.</p>
+        <p>The job of a model is to help the bank decide <strong>whom to call next</strong>. So the prediction has to be made <em>before</em> the phone rings.</p>
+    </section>
+
+    <section class="wrap prose">
+        <h2>When do you know each value?</h2>
+        <p>Every column in a dataset was recorded at some moment. The question that matters: was it recorded before the moment you need the prediction?</p>
+        <figure class="timeline" aria-label="Timeline of a sales call">
+            <ol class="steps">
+                <li class="now"><span class="dot"></span><b>Pick whom to call</b><span>prediction needed here</span></li>
+                <li><span class="dot"></span><b>Phone rings</b></li>
+                <li><span class="dot"></span><b>Customer decides</b><span>the answer we want to predict</span></li>
+                <li class="after"><span class="dot"></span><b>Call ends</b><span>duration is recorded</span></li>
+            </ol>
+            <div class="known">
+                <div><p class="tag">Known before the call</p><p>age · job · balance · contact type · month · calls this campaign · answer last time</p></div>
+                <div class="leaky"><p class="tag">Known only after the call</p><p>call duration</p></div>
+            </div>
+            <figcaption>Call duration is measured after the customer has already answered. Long calls mostly mean "yes", so the column quietly carries the answer.</figcaption>
+        </figure>
+    </section>
+
+    <section class="lab wrap-wide" id="lab">
+        <div class="lab-head">
+            <h2>Try it: switch the columns on and off</h2>
+            <p>A logistic-regression model trains in your browser on 4,000 synthetic calls built to behave like the real data, then is scored on calls it has not seen. Start with the honest columns, then switch on <span class="leak-word">call duration</span>.</p>
+        </div>
+        <div class="lab-grid">
+            <div class="controls">
+                <p class="label">Columns the model may use</p>
+                <div id="chips" class="chips" role="group" aria-label="Columns"></div>
+                <div class="presets">
+                    <button type="button" id="preset-honest">Honest columns only</button>
+                    <button type="button" id="preset-all">Everything</button>
+                </div>
+                <div class="score" aria-live="polite">
+                    <p class="label">ROC-AUC on unseen calls</p>
+                    <p id="auc" class="big">–</p>
+                    <p id="delta" class="delta"></p>
+                    <p class="hint">0.5 is guessing, 1.0 is perfect.</p>
+                </div>
+            </div>
+            <figure class="chart">
+                <svg id="roc" viewBox="0 0 360 340" role="img" aria-label="ROC curve"></svg>
+                <figcaption><span class="key solid"></span> your model <span class="key dashed"></span> <span id="ghost-label">same columns, plus call duration</span></figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section class="wrap prose">
+        <h2>In our real experiments</h2>
+        <div class="stat">
+            <p class="stat-num">+0.14</p>
+            <p>ROC-AUC added by <code>duration</code>, across <strong>every</strong> model family we tried: classical ML, the iLTM tabular foundation model, fine-tuned DistilBERT and RoBERTa, and Phi-3-mini prompting.</p>
+        </div>
+        <p>The gap caused by one leaky column was larger than the difference between any two architectures. A comparison of models that keeps <code>duration</code> mostly measures which model exploits the leak best.</p>
+    </section>
+
+    <section class="lab wrap-wide" id="time">
+        <div class="lab-head">
+            <h2>The second trap: time</h2>
+            <p>Even with honest columns, a random train/test split mixes old and new calls. In real use, a model is trained on the past and used on the future. Using the same honest columns:</p>
+        </div>
+        <div class="time-grid">
+            <div class="bars" aria-live="polite">
+                <p class="label">ROC-AUC, honest columns</p>
+                <div class="bar-row"><span>Random split</span><div class="bar"><i id="bar-random"></i></div><b id="val-random">–</b></div>
+                <div class="bar-row"><span>Past → future</span><div class="bar"><i id="bar-time" class="cool"></i></div><b id="val-time">–</b></div>
+            </div>
+            <div class="bars">
+                <p class="label">Share of calls answered "yes"</p>
+                <div class="bar-row"><span>Earlier calls</span><div class="bar"><i id="bar-early" class="muted"></i></div><b id="val-early">–</b></div>
+                <div class="bar-row"><span>Last stretch</span><div class="bar"><i id="bar-late" class="muted"></i></div><b id="val-late">–</b></div>
+            </div>
+        </div>
+        <div class="prose-inline">
+            <p>In the real data, training on 2008–2009 and testing on 2010 dropped ROC-AUC to <strong>0.6461</strong>. And 2010 was a different world: about <strong>52%</strong> said yes, against about 11% overall. In a period like that, a model that always answers "yes" already reaches an F1 of 0.68. Raw F1 from different periods cannot be compared; compare each model against a simple baseline on the same period.</p>
+            <button type="button" id="reroll" class="reroll">Generate new synthetic data</button>
+        </div>
+    </section>
+
+    <section class="wrap prose">
+        <h2>Catching it</h2>
+        <ol class="checklist">
+            <li><b>Would I know this value when I make the prediction?</b> Ask it for every column, especially anything with <em>duration</em>, <em>status</em>, <em>final</em> or <em>result</em> in its name.</li>
+            <li><b>Does one column carry the whole model?</b> Remove it and retrain. A big drop deserves an explanation.</li>
+            <li><b>Does the score survive a time-based split?</b> Train on the past, test on the future.</li>
+            <li><b>Are the same rows in both train and test?</b> Duplicates make the test set partly a memory test.</li>
+        </ol>
+        <p>I turned these checks into a small Python library, <a href="https://github.com/Israt24hub/leakguard">LeakGuard</a>:</p>
+        <pre><code>pip install git+https://github.com/Israt24hub/leakguard
+leakguard bank.csv --target y --time-col contact_date</code></pre>
+    </section>
+
+    <footer class="wrap foot">
+        <p>By <a href="https://github.com/Israt24hub">Israt Zaman Srity</a>. Based on our CSE445 group project at North South University (<a href="https://github.com/Israt24hub/bank-marketing-leakage">write-up</a>).</p>
+        <p>Data: Moro, Cortez &amp; Rita (2014), "A data-driven approach to predict the success of bank telemarketing", UCI Machine Learning Repository. The interactive charts use synthetic data generated in your browser; the numbers in "In our real experiments" and the 2010 figures come from the real data.</p>
+    </footer>
+</main>
+<script src="js/sim.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

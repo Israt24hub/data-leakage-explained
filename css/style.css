@@ -1,0 +1,143 @@
+/* Editorial article with two interactive "lab" panels. Orange-red marks the leak; teal marks honest results. */
+:root {
+    --paper: #f3f5f7;
+    --panel: #ffffff;
+    --ink: #13202e;
+    --muted: #5b6b7b;
+    --line: #d5dce3;
+    --leak: #d9481f;
+    --leak-soft: #fbe3da;
+    --honest: #1f7a8c;
+    --honest-soft: #dceff3;
+    --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+    --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --paper: #0f161d;
+        --panel: #15202a;
+        --ink: #e6edf3;
+        --muted: #93a4b5;
+        --line: #26333f;
+        --leak: #ff7a4d;
+        --leak-soft: #3a2119;
+        --honest: #4fb3c6;
+        --honest-soft: #15323a;
+        color-scheme: dark;
+    }
+}
+
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.65 var(--sans); padding-inline: 16px; }
+main { padding-block: clamp(32px, 7vw, 80px) 48px; }
+.wrap { max-width: 680px; margin: 0 auto; }
+.wrap-wide { max-width: 1040px; margin: 0 auto; }
+section { margin-top: clamp(40px, 7vw, 72px); }
+
+h1, h2 { font-family: var(--serif); font-weight: 600; line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(40px, 7vw, 68px); letter-spacing: -0.01em; }
+h2 { font-size: clamp(26px, 3.6vw, 34px); margin-bottom: 14px; }
+p { margin: 0 0 14px; }
+a { color: var(--honest); text-underline-offset: 3px; }
+code, pre { font-family: var(--mono); font-size: 0.86em; }
+code { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+pre { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+pre code { border: 0; padding: 0; background: none; }
+
+.eyebrow { font: 600 12px/1.4 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+.lede { font-size: clamp(18px, 2.2vw, 21px); line-height: 1.55; color: var(--ink); margin-top: 20px; }
+.label { font: 600 12px/1.3 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.leak-word { color: var(--leak); font-weight: 600; }
+
+/* timeline */
+.timeline { margin: 24px 0 0; }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); position: relative; }
+.steps::before { content: ""; position: absolute; left: 12.5%; right: 12.5%; top: 9px; height: 2px; background: var(--line); }
+.steps li { position: relative; text-align: center; padding: 0 6px; font-size: 14px; line-height: 1.35; }
+.steps .dot { display: block; width: 20px; height: 20px; margin: 0 auto 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--muted); position: relative; }
+.steps b { display: block; font-weight: 600; }
+.steps li > span:not(.dot) { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.steps .now .dot { background: var(--honest); border-color: var(--honest); }
+.steps .now b { color: var(--honest); }
+.steps .after .dot { background: var(--leak); border-color: var(--leak); }
+.steps .after b { color: var(--leak); }
+.known { display: grid; grid-template-columns: 3fr 1fr; gap: 12px; margin-top: 20px; }
+.known > div { background: var(--honest-soft); border-radius: 6px; padding: 12px 14px; font-size: 15px; }
+.known > div p { margin: 0; }
+.known .tag { font: 600 11px/1.3 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--honest); margin-bottom: 4px; }
+.known .leaky { background: var(--leak-soft); }
+.known .leaky .tag { color: var(--leak); }
+.timeline figcaption { color: var(--muted); font-size: 15px; margin-top: 14px; }
+
+/* labs */
+.lab { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: clamp(18px, 3.5vw, 36px); }
+.lab-head { max-width: 680px; }
+.lab-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(20px, 4vw, 48px); margin-top: 20px; align-items: start; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+    font: 500 14px/1 var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--line);
+    border-radius: 999px; padding: 9px 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+}
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--honest); background: var(--honest-soft); }
+.chip[aria-pressed="true"]::before { background: var(--honest); border-color: var(--honest); }
+.chip.leaky { border-style: dashed; border-color: var(--leak); }
+.chip.leaky[aria-pressed="true"] { background: var(--leak-soft); border-style: solid; }
+.chip.leaky[aria-pressed="true"]::before { background: var(--leak); border-color: var(--leak); }
+.chip small { color: var(--leak); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.presets { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.presets button, .reroll {
+    font: 500 13px/1 var(--sans); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 8px 11px; cursor: pointer;
+}
+.presets button:hover, .reroll:hover { color: var(--ink); border-color: var(--muted); }
+.score { margin-top: 26px; }
+.big { font: 600 clamp(52px, 8vw, 72px)/1 var(--mono); margin: 0; font-variant-numeric: tabular-nums; color: var(--honest); transition: color 0.2s; }
+.big.leaky { color: var(--leak); }
+.delta { font: 500 15px/1.4 var(--sans); min-height: 1.4em; margin: 10px 0 4px; }
+.delta b { font-family: var(--mono); }
+.hint { color: var(--muted); font-size: 14px; }
+.chart { margin: 0; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart figcaption { color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.key { display: inline-block; width: 22px; height: 0; border-top: 3px solid var(--honest); }
+.key.dashed { border-top: 2px dashed var(--leak); margin-left: 10px; }
+.chart .axis { stroke: var(--line); }
+.chart .tick { fill: var(--muted); font: 11px var(--mono); }
+.chart .axis-label { fill: var(--muted); font: 12px var(--sans); }
+.chart .curve { fill: none; stroke-width: 3; stroke-linejoin: round; }
+.chart .area { opacity: 0.12; }
+.chart .ghost { fill: none; stroke-width: 2; stroke-dasharray: 5 5; opacity: 0.8; }
+
+.time-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 4vw, 48px); margin-top: 20px; }
+.bar-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 52px; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; }
+.bar { height: 22px; background: var(--paper); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--honest); transition: width 0.5s ease; }
+.bar i.cool { background: var(--leak); }
+.bar i.muted { background: var(--muted); }
+.bar-row b { font: 600 14px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.prose-inline { max-width: 680px; margin-top: 18px; }
+
+.stat { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: center; border-left: 4px solid var(--leak); padding: 4px 0 4px 18px; margin: 8px 0 18px; }
+.stat-num { font: 600 clamp(44px, 7vw, 60px)/1 var(--mono); color: var(--leak); margin: 0; }
+.stat p:last-child { margin: 0; }
+
+.checklist { padding-left: 1.2em; }
+.checklist li { margin-bottom: 10px; }
+.foot { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+
+button:focus-visible, a:focus-visible { outline: 2px solid var(--honest); outline-offset: 2px; }
+
+@media (max-width: 760px) {
+    .lab-grid, .time-grid { grid-template-columns: minmax(0, 1fr); }
+    .known { grid-template-columns: minmax(0, 1fr); }
+    .steps li { font-size: 12.5px; padding: 0 2px; }
+    .steps li > span:not(.dot) { font-size: 11.5px; }
+    .stat { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .bar-row { grid-template-columns: 96px minmax(0, 1fr) 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bar i, .big { transition: none; }
+}
